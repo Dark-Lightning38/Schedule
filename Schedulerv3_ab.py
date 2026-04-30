@@ -1,16 +1,40 @@
 import pulp
 import pandas as pd
 from datetime import datetime
+import json
+
+################ JSON saving now ########################
+
+def load_db():
+    try:
+        with open("agents_db.json", "r") as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def save_db(agents_db):
+    with open("agents_db.json", "w") as file:
+        json.dump(agents_db, file)
+
+def add_agent(agents_list, agent_id, name, type_fte, FTE, days_worked, hours_worked): #NO PROTECTION IF AGENT EXISTS OR ENTRY ISN'T A NUMBER for FTE, etc.
+    agents_list.append({"Agent ID": agent_id,"name": name,"type": type_fte, "FTE": FTE, "days-worked":days_worked,"Hours-worked":hours_worked})
+
 
 # --- 1. CONFIGURATION ---
-agents_db = {}
-for i in range(1, 51):
-    if i <= 25: 
-        agents_db[f"Agent_{i:02d}"] = {"type": "FT", "workdays": [0,1,2,3,4], "window": (8, 16)}
-    elif i <= 15: 
-        agents_db[f"Agent_{i:02d}"] = {"type": "FT", "workdays": [0,1,2,3,4], "window": (16, 0)}
-    else: 
-        agents_db[f"Agent_{i:02d}"] = {"type": "PT", "workdays": [0,1,2,3,4], "window": (0, 8)}
+agents_db = load_db()  # Load existing agents from JSON, or start fresh
+#print(agents_db)
+#add_agent(agents_db, "Agent_01", "Agathe", "FT", 1, [0,1,2,3,4], (8,18))
+#add_agent(agents_db, "Agent_02", "Simon", "FT", 1, [0,1,2,3,4], (8,18))
+#save_db(agents_db)
+#print(agents_db)
+#input("Want more agents?")
+#for i in range(1, 51):
+#    if i <= 25: 
+#        agents_db[f"Agent_{i:02d}"] = {"type": "FT", "workdays": [0,1,2,3,4], "window": (8, 16)}
+#    elif i <= 15: 
+#        agents_db[f"Agent_{i:02d}"] = {"type": "FT", "workdays": [0,1,2,3,4], "window": (16, 0)}
+#    else: 
+#        agents_db[f"Agent_{i:02d}"] = {"type": "PT", "workdays": [0,1,2,3,4], "window": (0, 8)}
 
 def solve_full_period(clean_df):
     all_dates = sorted(clean_df['Date'].unique())
@@ -27,7 +51,7 @@ def solve_full_period(clean_df):
         avail_today = [a for a, info in agents_db.items() if weekday in info['workdays']]
         
         for a in avail_today:
-            s_min, s_max = agents_db[a]['window']
+            s_min, s_max = agents_db[a]['Hours-worked']
             # Track if agent works at all on this day
             agent_daily_work[(a, d)] = pulp.LpVariable(f"Work_{a}_{d}", cat="Binary")
             
