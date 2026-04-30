@@ -1,0 +1,131 @@
+import pulp
+import pandas as pd
+from datetime import datetime
+
+# --- 1. CONFIGURATION: YOUR AGENT LIST --- # Check these workdays! 0=Mon, 4=Fri, 5=Sat, 6=Sun.
+agents_db = {}
+for i in range(1, 51):
+    if i <= 20: # 1-20: Morning (Mon-Fri)
+        agents_db[f"Agent_{i:02d}"] = {"type": "FT", "workdays": [0,1,2,3,4], "window": (0, 9)}
+    elif i <= 35: # 21-35: Afternoon (Mon-Fri)
+        agents_db[f"Agent_{i:02d}"] = {"type": "FT", "workdays": [0,1,2,3,4], "window": (9, 23)}
+    else: # 36-50: Everyone else (Full Week)
+        agents_db[f"Agent_{i:02d}"] = {"type": "PT", "workdays": [0,1,2,3,4,5,6], "window": (0, 23)}
+
+def solve_day(date_val, demand_dict):
+    weekday = date_val.weekday()
+    avail = [a for a, info in agents_db.items() if weekday in info['workdays']]
+    
+    # DEBUG: See how many agents are available
+    print(f"--- Day: {date_val.date()} (Weekday {weekday}) | Agents Available: {len(avail)} ---")
+    
+    if len(avail) == 0:
+        print("!!! WARNING: No agents available for this day of the week.")
+        return []
+
+    prob = pulp.LpProblem(f"Sch_{date_val.date()}", pulp.LpMinimize)
+    choices = {}
+    for a in avail:
+        s_min, s_max = agents_db[a]['window']
+        for s in range(s_min, s_max + 1):
+            choices[(a, s)] = pulp.LpVariable(f"S_{a}_{s}_{date_val.date()}", cat="Binary")
+
+    # Constraint: Max 1 shift
+    for a in avail:
+        s_min, s_max = agents_db[a]['window']
+        prob += pulp.lpSum([choices[(a, s)] for s in range(s_min, s_max + 1)]) <= 1
+
+    # Constraint: Coverage with "Slack" (allows it to finish even if understaffed)
+    for h in range(24):
+        coverage = []
+        for a in avail:
+            dur = 8 if agents_db[a]['type'] == "FT" else 4
+            s_min, s_max = agents_db[a]['window']
+            for s in range(s_min, s_max + 1):
+                if s <= h < s + dur:
+                    if agents_db[a]['type'] == "FT" and h == (s + 4): # Lunch
+                        coverage.append(choices[(a, s)] * 0)
+                    else: coverage.append(choices[(a, s)] * 1)
+        
+        # This 'slack' variable makes the code 'Optimal' even if you don't have enough staff
+        slack = pulp.LpVariable(f"Slack_{h}", lowBound=0)
+        prob += pulp.lpSum(coverage) + slack >= demand_dict.get(h, 0)
+
+    # Goal: Minimize agents used (you can change this to minimize overstaffing)
+    prob += pulp.lpSum([choices[v] for v in choices])
+    
+    prob.solve(pulp.PULP_CBC_CMD(msg=0))
+    
+    res = []
+    print(f"Status: {pulp.LpStatus[prob.status]}") # Should say 'Optimal'
+    
+    for (a, s) in choices:
+        if pulp.value(choices[(a, s)]) == 1:
+            dur = 8 if agents_db[a]['type'] == "FT" else 4
+            res.append({"Date": date_val.date(), "Agent": a, "Start": f"{s:02d}:00", "End": f"{(s+dur)%24:02d}:00"})
+    
+    print(f"Assignments made: {len(res)}")
+    return res
+
+# --- UPDATED LOADING AND RUNNING SECTION ---
+try:
+    # 1. Load the file
+    df = pd.read_excel("need.xlsx")
+    
+    # 2. Let's see what the computer actually sees (Diagnostic)
+    actual_col_count = len(df.columns)
+    print(f"I found {actual_col_count} columns in your Excel file.")
+    print(f"Column names found: {list(df.columns)}")
+
+       # 3. Create a cleaned version of the data
+    clean_df = pd.DataFrame()
+   
+   # Column A: Date
+    clean_df['Date'] = pd.to_datetime(df.iloc[:, 0]) 
+   
+   # Column C: Hour (Converting "09:00" string to integer 9)
+   # We convert to string, split at the colon, take the first part, and make it a number
+    clean_df['Hour'] = pd.to_numeric(df.iloc[:, 2].astype(str).str.split(':').str[0], errors='coerce')
+   
+   # Column D: FTE_Brut (Ensuring it is a number, not text)
+    clean_df['FTE_Brut'] = pd.to_numeric(df.iloc[:, 4], errors='coerce').fillna(0)
+
+   # Clean up any rows that aren't valid numbers
+    clean_df = clean_df.dropna(subset=['Hour'])
+
+
+    
+    print(f"Successfully processed {len(clean_df)} rows of data.")
+
+    
+    all_res = []
+    for d in clean_df['Date'].unique():
+        # Convert numpy datetime back to pandas timestamp for the solver
+        ts = pd.to_datetime(d)
+        day_data = clean_df[clean_df['Date'] == d]
+        
+        # Map Hour to FTE
+        demand_dict = dict(zip(day_data['Hour'], day_data['FTE_Brut']))
+        
+        
+        #---DEBUG PRINT----
+        print(f"Total Demand for {ts.date()}:{sum(demand_dict.values())}")
+        print(f"Hours with demand:{list(demand_dict.keys())}")
+    
+        # Solve for the day
+        all_res.extend(solve_day(ts, demand_dict))
+
+    print (demand_dict)
+        
+    if len(all_res) > 0:
+        output_df = pd.DataFrame(all_res)
+        output_df.to_excel("final_schedule.xlsx", index=False)
+        print("\n*** SUCCESS! Check final_schedule.xlsx ***")
+    else:
+        print("\n*** ERROR: No assignments were generated. Check the text above for warnings. ***")
+
+except Exception as e:
+    # This will tell us EXACTLY what went wrong
+    import traceback
+    print("\n*** CRITICAL ERROR DETAILS ***")
+    print(traceback.format_exc())
