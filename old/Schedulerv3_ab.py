@@ -35,6 +35,19 @@ agents_db = load_db()  # Load existing agents from JSON, or start fresh
 #        agents_db[f"Agent_{i:02d}"] = {"type": "FT", "workdays": [0,1,2,3,4], "window": (16, 0)}
 #    else: 
 #        agents_db[f"Agent_{i:02d}"] = {"type": "PT", "workdays": [0,1,2,3,4], "window": (0, 8)}
+# Deduplicate by Agent ID (keeps first occurrence)
+seen = set()
+agents_db_clean = []
+for agent in agents_db:
+    if agent["Agent ID"] not in seen:
+        seen.add(agent["Agent ID"])
+        agents_db_clean.append(agent)
+
+# Build a lookup dict for easy access: {"Agent_01": {...}, ...}
+agents_dict = {agent["Agent ID"]: agent for agent in agents_db_clean}
+
+print(f"Loaded {len(agents_dict)} agents: {list(agents_dict.keys())}")
+
 
 def solve_full_period(clean_df):
     all_dates = sorted(clean_df['Date'].unique())

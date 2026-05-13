@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PPTX Generator - One Operations 2028</title>
+    <!-- 1. Include the Library -->
+    <script src="https://urldefense.com/v3/__https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js__;!!BnkV9pdh5V0!DtjutdQpHveiHDw_58Hz-Lf2QGYxXjG9DQn7AOPmIrN_m-phQYhRdUFmPi7jLpZzZfowTqbit03UWkkhl5K2MAb0C_nJeg$ "></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #e8e8e8; }
+        .btn { background: #00a3a1; color: white; border: none; padding: 20px 40px; font-size: 18px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn:hover { background: #051c2c; }
+        p { color: #666; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <button class="btn" onclick="generatePPT()">Generate "One Operations 2028" Slide</button>
+    <p>Clicking this will generate a 16:9 editable PowerPoint file.</p>
+
+<script>
+function generatePPT() {
+    let pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_16x9'; // Standard Wide Slide
+
+    // Define Colors to match your CSS
+    const COLORS = {
+        navy: "051C2C",
+        accent: "00A3A1",
+        warn: "C8102E",
+        slate: "4A5568",
+        bgSoft: "F7FAFC",
+        travel: "051C2C",
+        health: "00A3A1",
+        mobility: "C97C1A",
+        credit: "6B4F96"
+    };
+
+    let slide = pptx.addSlide();
+
+    // --- 1. META BAR & HEADER ---
+    slide.addText("AXA Partners · Confidential · Project One Operations 2028", { x: 0.4, y: 0.2, fontSize: 8, color: COLORS.slate });
+    slide.addText("Steering Committee · 12 Nov 2025", { x: 7.5, y: 0.2, fontSize: 8, color: COLORS.slate, align: 'right' });
+    slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 0.4, w: 9.2, h: 0, line: { color: "E2E8F0", width: 1 } });
+
+    slide.addText("WAVE PLAN & SAVINGS TRAJECTORY", { x: 0.4, y: 0.6, fontSize: 9, color: COLORS.accent, bold: true });
+    slide.addText([
+        { text: "Eight sequenced waves over " },
+        { text: "three fiscal years", options: { italic: true, bold: true } },
+        { text: " migrate 1,700 FTEs to LatAm and Africa hubs, unlocking a €194M annual run-rate by FY28" }
+    ], { x: 0.4, y: 0.9, w: 9.0, fontSize: 18, color: COLORS.navy });
+
+    // --- 2. TIMELINE PANEL (LEFT) ---
+    // Background box
+    slide.addShape(pptx.ShapeType.rect, { x: 0.4, y: 1.7, w: 5.8, h: 2.8, fill: { color: COLORS.bgSoft }, line: { color: "CBD5E0", width: 1 } });
+    slide.addText("1  WAVE PLAN — FTEs migrating per wave", { x: 0.5, y: 1.8, fontSize: 10, color: COLORS.navy, bold: true });
+
+    // Waves Data (Automated Loop)
+    const waves = [
+        { label: "W1: FR → Morocco", fte: "180", col: 1, color: COLORS.travel },
+        { label: "W2: UK → India", fte: "140", col: 2, color: COLORS.health },
+        { label: "W3: ES+IT → Mex", fte: "220", col: 3, color: COLORS.travel },
+        { label: "W4: DE → Poland", fte: "160", col: 4, color: COLORS.mobility },
+        { label: "W5: FR → Moroc", fte: "310", col: 5, color: COLORS.travel },
+        { label: "W6: Multi → Col", fte: "290", col: 7, color: COLORS.health },
+    ];
+
+    waves.forEach((w, index) => {
+        let xPos = 0.6 + (w.col * 0.45); // Calculate X based on column
+        slide.addShape(pptx.ShapeType.rect, { x: xPos, y: 2.5 + (index * 0.25), w: 1.5, h: 0.2, fill: { color: w.color } });
+        slide.addText(w.label + " (" + w.fte + ")", { x: xPos, y: 2.5 + (index * 0.25), w: 1.5, h: 0.2, color: "FFFFFF", fontSize: 7, align: 'center' });
+    });
+
+    // --- 3. SAVINGS CHART (RIGHT) ---
+    slide.addShape(pptx.ShapeType.rect, { x: 6.4, y: 1.7, w: 3.2, h: 2.0, line: { color: "CBD5E0", width: 1 } });
+    slide.addText("2  RUN-RATE SAVINGS — €M", { x: 6.5, y: 1.8, fontSize: 10, color: COLORS.navy, bold: true });
+    
+    // Simple Chart Representation
+    const bars = [
+        { lbl: "FY25", val: 0, h: 0.1 },
+        { lbl: "FY26", val: 28, h: 0.4 },
+        { lbl: "FY27", val: 112, h: 1.0 },
+        { lbl: "FY28", val: 194, h: 1.5 }
+    ];
+    bars.forEach((bar, i) => {
+        slide.addShape(pptx.ShapeType.rect, { x: 6.6 + (i * 0.7), y: 3.5 - bar.h, w: 0.4, h: bar.h, fill: { color: COLORS.accent } });
+        slide.addText(bar.lbl, { x: 6.6 + (i * 0.7), y: 3.5, w: 0.4, fontSize: 8, align: 'center' });
+        slide.addText(bar.val.toString(), { x: 6.6 + (i * 0.7), y: 3.5 - bar.h - 0.2, w: 0.4, fontSize: 8, bold: true, align: 'center' });
+    });
+
+    // --- 4. KPI BAND (NAVY BOXES) ---
+    slide.addShape(pptx.ShapeType.rect, { x: 6.4, y: 3.8, w: 3.2, h: 0.7, fill: { color: COLORS.navy } });
+    slide.addText("14mo\nPayback", { x: 6.4, y: 3.9, w: 1.0, fontSize: 10, color: "FFFFFF", align: 'center' });
+    slide.addText("€78M\nTrans. Cost", { x: 7.5, y: 3.9, w: 1.0, fontSize: 10, color: "FFFFFF", align: 'center' });
+    slide.addText("€620M\n5-yr Cumul.", { x: 8.6, y: 3.9, w: 1.0, fontSize: 10, color: "FFFFFF", align: 'center' });
+
+    // --- 5. SO WHAT STRIP ---
+    slide.addShape(pptx.ShapeType.rect, { x: 0.4, y: 4.7, w: 9.2, h: 0.6, fill: { color: "FFFFFF" }, line: { color: COLORS.accent, width: 2 } });
+    slide.addText("SO WHAT — IMPLICATIONS BUSINESS", { x: 0.5, y: 4.75, fontSize: 8, color: COLORS.accent, bold: true });
+    slide.addText("FY27 is l'année charnière : 61% des FTEs migrent en 18 mois. Tout retard compromet le run-rate FY28.", { x: 0.5, y: 4.95, w: 9.0, fontSize: 11, color: COLORS.navy });
+
+    // --- 6. RISKS & ASKS (COLUMNS) ---
+    // Risks
+    slide.addShape(pptx.ShapeType.rect, { x: 0.4, y: 5.5, w: 4.5, h: 1.2, fill: { color: "FEF5F5" }, line: { color: "F5CFCC" } });
+    slide.addText("POINTS DE VIGILANCE", { x: 0.5, y: 5.6, fontSize: 9, color: COLORS.warn, bold: true });
+    slide.addText("• CSE France: Consultation Q3 2026\n• Concentration LatAm: 56% des waves", { x: 0.5, y: 5.8, w: 4.3, fontSize: 10 });
+
+    // Asks
+    slide.addShape(pptx.ShapeType.rect, { x: 5.1, y: 5.5, w: 4.5, h: 1.2, fill: { color: "F0F9F8" }, line: { color: "C5E8E6" } });
+    slide.addText("DÉCISIONS À PRENDRE", { x: 5.2, y: 5.6, fontSize: 9, color: COLORS.accent, bold: true });
+    slide.addText("• Validation séquencement W1–W4\n• Arbitrage capacité Maroc (+200 postes)", { x: 5.2, y: 5.8, w: 4.3, fontSize: 10 });
+
+    // Footer
+    slide.addText("Source: Programme Office baseline (FY25) · Page 3/24", { x: 0.4, y: 6.9, fontSize: 7, color: COLORS.slate });
+
+    // 4. Save the File
+    pptx.writeFile({ fileName: "One_Operations_2028_Report.pptx" }); } </script> </body> </html>
